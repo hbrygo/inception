@@ -1,43 +1,53 @@
-FROM debian:buster
+FROM debian:bullseye
 
-# Ajouter le dépôt de sury.org pour obtenir PHP 7.4
 RUN apt-get update -y && apt-get install -y \
-    gnupg \
-    apt-transport-https \
-    lsb-release \
-    ca-certificates \
-    wget && \
-    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/sury-php.list && \
-    wget -qO - https://packages.sury.org/php/apt.gpg | apt-key add -
+  wget \
+  php7.4-fpm \
+  php7.4 \
+  php7.4-mysql \
+  php7.4-fpm \
+  php7.4-curl \
+  php7.4-gd \
+  php7.4-intl \
+  php7.4-mbstring \
+  php7.4-soap \
+  php7.4-xml \
+  php7.4-xmlrpc \
+  php7.4-zip \
+  mariadb-server \
+  mariadb-client \
+  && rm -rf /var/lib/apt/lists/*
 
-# Mettre à jour les listes de paquets et installer les paquets nécessaires
-RUN apt-get update -y && apt-get install -y \
-    wget \
-    php7.4 \
-    php7.4-fpm \
-    php7.4-mysql \
-    mariadb-client
+RUN mkdir /app
+WORKDIR /app
 
-# Télécharger WordPress
-RUN wget https://fr.wordpress.org/wordpress-6.0-fr_FR.tar.gz -P /var/www
+RUN groupadd wordpress && useradd -g wordpress wordpress
 
-# Décompresser WordPress et configurer les permissions
-RUN tar -xzf /var/www/wordpress-6.0-fr_FR.tar.gz -C /var/www && \
-    rm /var/www/wordpress-6.0-fr_FR.tar.gz && \
-    chown -R root:root /var/www/wordpress
+# Installation de WordPress
+RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+ && chmod +x wp-cli.phar \
+ && mv wp-cli.phar /bin/wp
 
-# Créer le répertoire pour PHP-FPM
-RUN mkdir -p /run/php
+ADD tools/run.sh /
+RUN chmod +x /run.sh
 
-# Télécharger et configurer WP-CLI
-RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
-    chmod +x wp-cli.phar && \
-    mv wp-cli.phar /usr/local/bin/wp
+COPY tools/php-fpm.conf /etc/php/7.4/fpm/
 
-# Copier le script dans le conteneur
-COPY ./tools/script.sh /bin/wp-script.sh
-RUN chmod +x /bin/wp-script.sh
+RUN ln -s $(which php-fpm7.4) /bin/php-fpm \
+  && mkdir -p /run/php/ \
+  && chown -R wordpress:wordpress /run/php/ \
+  && mkdir -p /usr/logs/php-fpm \
+  && chown -R wordpress:wordpress /usr/logs/php-fpm \
+  && chmod -R 755 /usr/logs/php-fpm
 
-# Définir le point d'entrée
-ENTRYPOINT ["sh", "/bin/wp-script.sh"]
+RUN wget https://wordpress.org/wordpress-6.2.2.tar.gz \
+  && tar -zxvf wordpress-6.2.2.tar.gz \
+  && mv wordpress/* . \
+  && rm -rf wordpress wordpress-6.2.2.tar.gz \
+  && chown -R wordpress:wordpress /app \
+  && chmod -R 755 /app
+
+USER wordpress:wordpress
+
+ENTRYPOINT ["/run.sh"]
 

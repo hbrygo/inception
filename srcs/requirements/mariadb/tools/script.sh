@@ -1,31 +1,10 @@
 #!/bin/sh
 
-# start maria db service
-service mariadb start
-
-# execute next commands as root
-mariadb -v -u root <<EOF
-
-CREATE DATABASE IF NOT EXISTS $SQL_DATABASE;
-
-CREATE USER IF NOT EXISTS '$SQL_USER'@'%' IDENTIFIED BY '$SQL_PASSWORD';
-
-GRANT ALL PRIVILEGES ON $SQL_DATABASE.* TO '$SQL_USER'@'%';
-
-GRANT ALL PRIVILEGES ON $SQL_DATABASE.* TO 'root'@'%' IDENTIFIED BY '$SQL_ROOT_PASSWORD';
-
-SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$SQL_ROOT_PASSWORD');
-
+echo "DROP DATABASE IF EXISTS test; 
+CREATE DATABASE IF NOT EXISTS ${SQL_DATABASE} DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+CREATE USER IF NOT EXISTS '${SQL_USER}'@'localhost' IDENTIFIED BY '${SQL_PASSWORD}';
+GRANT ALL PRIVILEGES ON ${SQL_DATABASE}.* TO '${SQL_USER}'@'%' IDENTIFIED BY '${SQL_PASSWORD}';
 FLUSH PRIVILEGES;
+SHOW GRANTS FOR '${SQL_USER}';" > /etc/my.sql
 
-EOF
-
-# wait 5 sec that everything is done 
-sleep 5
-
-# stops maria db service , needs to be started from docker compose
-service mariadb stop
-
-# Exécute all comands fron file
-exec "$@"
-
+mysqld_safe --init-file=/etc/my.sql;

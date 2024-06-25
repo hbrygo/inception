@@ -1,19 +1,18 @@
-FROM debian:buster
+FROM debian:bullseye
 
-RUN apt-get update && apt-get upgrade && apt-get install nginx -y
+RUN apt-get update && apt-get install -y \
+  nginx \
+  openssl \
+  && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /etc/nginx/ssl
-RUN apt-get install openssl -y
+RUN rm /etc/nginx/sites-enabled/default
+COPY conf/nginx.conf /etc/nginx/sites-enabled/
 
-RUN openssl req -x509 -nodes -out /etc/nginx/ssl/inception.crt -keyout /etc/nginx/ssl/inception.key -subj "/C=FR/ST=IDF/L=Bruxelles/O=42/OU=42/CN=hubrygo.42.fr/UID=hubrygo"
+RUN mkdir -p /etc/nginx/ssl && openssl req -x509 \
+            -sha256 -days 356 \
+            -nodes \
+            -newkey rsa:2048 \
+            -subj "/CN=hubrygo.42.fr/C=FR/L=Paris/O=hubrygo@42" \
+            -keyout /etc/nginx/ssl/inception.key -out /etc/nginx/ssl/inception.crt
 
-RUN mkdir -p /var/run/nginx
-
-COPY conf/nginx.conf /etc/nginx/nginx.conf
-
-RUN chmod 755 /var/www/html
-RUN chown -R www-data:www-data /var/www/html
-
-EXPOSE 443
-
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["nginx", "-g", "daemon off;"]

@@ -1,73 +1,56 @@
-version: '3'
-
 services:
-  mariadb:
-    container_name: mariadb
-    image: mariadb # use offical image if build is not needed
-    build: 
-      context: ./requirements/mariadb
-    expose:
-      - "3306" # open port for internal communication
-    volumes:
-      - mariadb_data:/var/lib/mysql 
-    ports:
-      - "3306:3306" # accesible from external devices
-    networks:
-      - inception
-    env_file:
-      - .env
-    restart: always
-  
   nginx:
     container_name: nginx
-    image: nginx
-    build:
-      context: ./requirements/nginx
+    image: inception/nginx
+    build: requirements/nginx
     volumes:
-      - wordpress_data:/var/www/wordpress
+      - inception_app_data:/app
     ports:
       - 443:443
     networks:
-      - inception
-    env_file:
-      - .env
+      - inception_net
     depends_on:
       - wordpress
     restart: always
 
   wordpress:
     container_name: wordpress
-    image: wordpress
-    build:
-      context: ./requirements/wordpress
+    image: inception/wordpress
+    build: requirements/wordpress
     volumes:
-      - wordpress_data:/var/www/wordpress
-    ports:
-      - 9000:9000
+      - inception/wordpress
     networks:
-      - inception
-    env_file:
-      - .env
+      - inception_net
+    env_file: .env
     depends_on:
       - mariadb
-    restart: always
+    restart: unless-stopped
+
+  mariadb:
+    container_name: mariadb
+    image: inception/mariadb
+    build: requirements/mariadb
+    volumes:
+      - inception_db_data:/var/lib/mysql
+    networks:
+      - inception_net
+    env_file: .env
+    restart: unless-stopped
+  
+volumes:
+  inception_db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: '/home/hubrygo/data/mariadb'
+
+  inception_app_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: '/home/hubrygo/data/wordpress'
 
 networks:
-  inception:
-    driver: bridge # bridge connection 
-
-volumes:
-  mariadb_data: # svae maria db info permanently
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /home/hubrygo/data/mariadb_data
-
-  wordpress_data: 
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /home/hubrygo/data/wordpress
-
+  inception_net:

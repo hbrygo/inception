@@ -1,12 +1,12 @@
-FROM debian:buster
+FROM debian:bullseye
 
-RUN apt-get update && apt-get upgrade -y
-RUN apt-get install mariadb-server -y
+RUN apt-get update && apt-get install -y \
+    mariadb-server \
+  && rm -rf /var/lib/apt/lists/*
 
-COPY conf/50-server.cnf	/etc/mysql/mariadb.conf.d/50-server.cnf
+COPY tools/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
 
-COPY tools/script.sh /bin/
+COPY tools/script.sh /
 
-RUN chmod +x /bin/script.sh
-
-CMD ["/bin/bash", "-c", "/bin/script.sh && mysqld_safe"]
+RUN chmod +x /script.sh
+ENTRYPOINT ["bash", "script.sh"]
