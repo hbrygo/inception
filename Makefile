@@ -31,6 +31,7 @@ restart:
 .PHONY: clean
 clean:
 	$(DOWN) --volumes
+	docker rmi $(docker images -a -q)
 
 .PHONY: logs
 logs:
