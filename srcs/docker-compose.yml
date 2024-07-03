@@ -1,49 +1,43 @@
 services:
   nginx:
-    container_name: nginx
+    container_name: inception_nginx
     image: inception/nginx
     build: requirements/nginx
-    volumes:
-      - inception_app_data:/app
-    ports:
-      - 443:443
-    networks:
-      - inception_net
     depends_on:
       - wordpress
+    ports:
+      - 443:443
+    volumes:
+      - inception_app_data:/app
+    networks:
+      - inception_net
     restart: always
 
   wordpress:
-    container_name: wordpress
+    container_name: inception_wordpress
     image: inception/wordpress
     build: requirements/wordpress
-    volumes:
-      - inception/wordpress
-    networks:
-      - inception_net
-    env_file: .env
     depends_on:
       - mariadb
+    volumes:
+      - inception_app_data:/app
+    env_file: .env
+    networks:
+      - inception_net
     restart: unless-stopped
 
   mariadb:
-    container_name: mariadb
+    container_name: inception_mariadb
     image: inception/mariadb
     build: requirements/mariadb
     volumes:
       - inception_db_data:/var/lib/mysql
+    env_file: .env
     networks:
       - inception_net
-    env_file: .env
     restart: unless-stopped
-  
+
 volumes:
-  inception_db_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: '/home/hubrygo/data/mariadb'
 
   inception_app_data:
     driver: local
@@ -51,6 +45,13 @@ volumes:
       type: none
       o: bind
       device: '/home/hubrygo/data/wordpress'
+
+  inception_db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: '/home/hubrygo/data/mariadb'
 
 networks:
   inception_net:

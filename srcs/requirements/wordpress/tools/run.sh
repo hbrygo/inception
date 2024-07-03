@@ -3,18 +3,21 @@
 check_db () {
 	echo "[INFO] Check db connection"
 	wp db check
-	
+
 	if [ $? -eq 0 ]; then
 		echo "[INFO] db connected"
 	else
-		echo "[ERROR] db connection failed!"
+		echo "[ERROR] db connection faild!"
 		exit 1;
 	fi
+
 }
 
 run_install () {
+
+
 	echo "[INFO] Create wordpress config"
-	wp config create install --allow-root --dbname=$SQL_DATABASE --dbusser=$SQL_USER --dbpass=$SQL_PASSWORD --dbhost=$MARIADB_HOST
+	wp config create --allow-root --dbname=$SQL_DATABASE --dbuser=$SQL_USER --dbpass=$SQL_PASSWORD --dbhost=$MARIADB_HOST
 
 	check_db;
 
@@ -34,7 +37,7 @@ run_install () {
 	if [ $? -eq 0 ]; then
 		echo "[INFO] $WORDPRESS_USER created"
 	else
-		echo "[ERROR] failed to create $WORDPRESS_USER"
+		echo "[ERROR] Faild to create $WORDPRESS_USER!"
 		exit 1;
 	fi
 }
@@ -42,7 +45,7 @@ run_install () {
 wp config path 2>/dev/null
 
 if [ $? -eq 0 ]; then
-	echo "[INFO] WP is install, skip installation"
+	echo "[INFO] WP is install, skip installtion"
 	check_db;
 else
 	echo "[INFO] WP not install"
